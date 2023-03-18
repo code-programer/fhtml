@@ -1,0 +1,172 @@
+<html>
+	<body>
+		<input type="file" id="in" accept=".fhtml"> | <input type="text" placeholder="sense titol..." id="projectname"> | <button onclick="fhtml.download(fhtml.toJSON())">DOWNLOAD as project</button>
+		<div ondragover="drag_over(event)" ondrop="drop(event)" id="editor">
+      </div>
+      <button id="newel">New Element</button><br>
+      <input id="inside" placeholder="Write or past text to edit the selected element."><br><br><p style="display: inline;">You're selectig: #<p id="selecting"></p></p><textarea id="css" placeholder="Write here css..."></textarea><button onclick="csser()">APPLY</button><br>You can get examples at <a href="https://uiverse.io" target="_blank">uiverse.io</a>
+	</body>
+	<style type="text/css" id="style"></style>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.4.js"></script>
+	<script type="text/javascript">
+		function csser(){
+			const style = document.createElement('style');
+  style.textContent = document.getElementById("css").value;
+  document.head.append(style);
+
+		}
+		function actualize(e){
+				fhtml.selected.innerHTML = document.getElementById("inside").value;
+		}
+		document.getElementById("inside").addEventListener("keyup",actualize)
+		var fhtml = {};
+		fhtml.toJSON = function(){
+			fhtml.selected.style.background = "white";
+			var els = document.getElementById("editor").children;
+			var elsed = [];
+			let n = 0;
+
+			while (n < els.length) {
+  			elsed.push(n)
+    		n++;
+			}
+
+			var fins = [];
+			for(e in elsed){
+				fins[e] = {};
+				var el = els[e];
+				var attri = el.attributes;
+				fins[e]["attri"] = {};
+				fins[e].tag = el.tagName;
+				fins[e].content = el.innerHTML;
+				fins[e].style = el.style;
+				for(a in attri){
+					if(attri[a].name != "draggable" && attri[a].name != "ondragstart" && attri[a].value !== undefined){
+						fins[e].attri[attri[a].name] = attri[a].value;
+					}
+				}
+			}
+			return fins;
+		}
+		fhtml.elements = 0;
+		fhtml.selected = document.getElementById("editor");
+		function newel(){
+			var newelement = document.createElement("div");
+			document.getElementById("editor").appendChild(newelement)
+			newelement.setAttribute("draggable","true")
+			newelement.setAttribute("tabindex","100")
+			newelement.setAttribute("ondragstart","drag_start(event)")
+			newelement.id = "txt" + fhtml.elements;
+			$("#" + newelement.id).focusin(function() {
+				$("#" + fhtml.selected.id).css("background", "white");
+  			$("#" + newelement.id).css("background", "lightblue");
+  			fhtml.selected = newelement;
+  			document.getElementById("selecting").innerHTML = newelement.id;
+			});
+			fhtml.elements = fhtml.elements + 1;
+		}
+		document.getElementById("newel").addEventListener("click",newel)
+		function datat(e){
+					fhtml.selected = document.getElementById("editor");
+			fhtml.data = JSON.parse(e)
+					fhtml.elements = 0;
+			document.getElementById("editor").innerHTML = "";
+			for(e in fhtml.data){
+				var el = fhtml.data[e];
+				var newelement = document.createElement(el.tag);
+				document.getElementById("editor").appendChild(newelement)
+			newelement.setAttribute("draggable","true")
+			newelement.setAttribute("tabindex","100")
+			newelement.setAttribute("ondragstart","drag_start(event)")
+			newelement.id = "txt" + fhtml.elements;
+			newelement.innerHTML = el.content;
+			for(a in el.attri){
+				newelement.setAttribute(a, el.attri[a])
+			}
+			$("#" + newelement.id).focusin(function() {
+				$("#" + fhtml.selected.id).css("background", "white");
+  			$("#" + newelement.id).css("background", "lightblue");
+  			fhtml.selected = newelement;
+			});
+			fhtml.elements = fhtml.elements + 1;
+			}
+		}
+		function upload(e){
+			var element = document.getElementById('in');
+			var file = element.files[0];
+			var blob = file.slice(0, file.size, 'application/json'); 
+			newFile = new File([blob], file.name.split(".")[0] + '.json', {type: 'application/json'});
+			newFile.text() .then((data) => datat(data))
+		}
+		document.getElementById("in").addEventListener("change",upload)
+		fhtml.download = function(obj){;
+const blob = new Blob([JSON.stringify(obj, null, 2)], {
+  type: "application/json",
+});
+download(URL.createObjectURL(blob), Math.floor(Math.random() * 100000) + ".fhtml")
+		}
+		function download(url, filename){
+			fetch(url)
+  .then(resp => resp.blob())
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    // the filename you want
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    alert('your file has downloaded!'); // or you know, something with better UX...
+  })
+  .catch(() => alert('oh no!'));
+		}
+		function drag_start(event) {
+                var style = window.getComputedStyle(event.target, null);
+                var str = (parseInt(style.getPropertyValue("left")) - event.clientX) + ',' + (parseInt(style.getPropertyValue("top")) - event.clientY) + ',' + event.target.id;
+                event.dataTransfer.setData("Text", str);
+            }
+
+            function drop(event) {
+                var offset = event.dataTransfer.getData("Text").split(',');
+                var dm = document.getElementById(offset[2]);
+                dm.style.left = (event.clientX + parseInt(offset[0], 10)) + 'px';
+                dm.style.top = (event.clientY + parseInt(offset[1], 10)) + 'px';
+                event.preventDefault();
+                return false;
+            }
+
+            function drag_over(event) {
+                event.preventDefault();
+                return false;
+            }
+            function addStyle(styleString) {
+  const style = document.createElement('style');
+  style.textContent = styleString;
+  document.head.append(style);
+}
+	</script>
+	<style type="text/css">
+		#editor{
+			width: 120%;
+			height: 80%;
+			border: 3px solid black;
+			border-radius: 25px;
+		}
+		html, body{
+			height: 90%;
+			width: 90%;
+		}
+		#editor div
+    	{ 
+          position:  relative;
+          left: 0;
+          top: 0; /* set these so Chrome doesn't return 'auto' from getComputedStyle */
+          width: 200px; 
+          background: rgba(255,255,255,0.66); 
+          border: 2px  solid rgba(0,0,0,0.5); 
+          border-radius: 4px; padding: 8px;
+    	}
+	</style>
+</html>
